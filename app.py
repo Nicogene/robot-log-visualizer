@@ -2,11 +2,16 @@
 import sys
 import os
 
+# Synchronization
+from datetime import datetime
+
 # GUI
 from ui.gui import RobotViewerMainWindow
 from PyQt5.QtWidgets import QApplication
 
 from file_reader.signal_provider import SignalProvider
+
+from data_plotter.plotter import Plotter
 
 # Meshcat
 from robot_visualizer.meshcat_visualizer import MeshcatVisualizer
@@ -36,18 +41,30 @@ if __name__ == '__main__':
     meshcat.set_model_from_file(get_model_path(), get_joint_list())
     meshcat.load_model(color=[1, 1, 1, 0.8])
 
-    signal_provider = SignalProvider(meshcat)
+    # Refresh rate
+    visualization_fps = 5
+
+    now = datetime.now().timestamp()
+
+    signal_provider = SignalProvider(meshcat,
+                                     initial_time=now,
+                                     visualization_fps=visualization_fps)
+
+    plotter = Plotter(initial_time=now,
+                      visualization_fps=visualization_fps)
 
     # instantiate a QApplication
     app = QApplication(sys.argv)
 
     # instantiate the main window
-    gui = RobotViewerMainWindow(meshcat=meshcat, signal_provider=signal_provider)
+    gui = RobotViewerMainWindow(meshcat=meshcat, signal_provider=signal_provider, plotter=plotter)
 
     # show the main window
     gui.show()
 
     signal_provider.start()
+
+    plotter.start()
 
     sys.exit(app.exec_())
 

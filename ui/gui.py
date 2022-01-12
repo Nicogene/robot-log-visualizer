@@ -9,21 +9,35 @@ import sys
 # QtDesigner generated classes
 from ui.visualizer import Ui_MainWindow
 
+# Matplotlib class
+from data_plotter.matplotlib_viewer_canvas import MatplotlibViewerCanvas
+
+# Plotter
+from data_plotter.plotter import Plotter
+
 # for logging
 from time import localtime, strftime
 
 
 class RobotViewerMainWindow(QtWidgets.QMainWindow):
     """
-    Main window class of EVB1000 Viewer
+    Main window class of Robot Viewer
     """
-    def __init__(self, meshcat: str, signal_provider):
+    def __init__(self, meshcat: str, signal_provider, plotter):
         # call QMainWindow constructor
         super().__init__()
 
         # set up the user interface
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+
+        # instantiate MatplotlibViewerCanvas
+        self.mpl_canvas = MatplotlibViewerCanvas(self.ui.matPlotGroupBox)
+
+        self.plotter = plotter
+        self.plotter.assign_canvas(self.mpl_canvas)
+        self.plotter_size = len(self.plotter)
+        self.plotter.register_update_index(self.update_slider)
 
         self.signal_provider = signal_provider
         self.signal_size = len(self.signal_provider)
@@ -33,6 +47,9 @@ class RobotViewerMainWindow(QtWidgets.QMainWindow):
         self.logger = Logger(self.ui.logLabel, self.ui.logScrollArea)
 
         self.slider_pressed = False
+
+        # add canvas to the main window
+        self.ui.matPlotGroupBoxLayout.addWidget(self.mpl_canvas)
 
         # connect action
         self.ui.actionQuit.triggered.connect(self.quit)
@@ -51,22 +68,22 @@ class RobotViewerMainWindow(QtWidgets.QMainWindow):
     def timeSlider_on_release(self):
         index = int(self.ui.timeSlider.value() / 100 * self.signal_size)
         self.signal_provider.index = index
+        self.plotter.index = index
         self.slider_pressed = False
         self.logger.write_to_log("Dataset index set at " + str(index) + ".")
-
 
     def startButton_on_click(self):
         self.ui.startButton.setEnabled(False)
         self.ui.pauseButton.setEnabled(True)
         self.signal_provider.state = "running"
-
+        self.plotter.state = "running"
         self.logger.write_to_log("Dataset started.")
 
     def pauseButton_on_click(self):
         self.ui.pauseButton.setEnabled(False)
         self.ui.startButton.setEnabled(True)
         self.signal_provider.state = "pause"
-
+        self.plotter.state = "pause"
         self.logger.write_to_log("Dataset paused.")
 
     @pyqtSlot()
@@ -88,6 +105,7 @@ class RobotViewerMainWindow(QtWidgets.QMainWindow):
     def open_mat_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, "Open a mat file", ".", filter='*.mat')
         self.signal_provider.open_mat_file(file_name)
+        self.plotter.open_mat_file(file_name)
         self.ui.startButton.setEnabled(True)
         self.ui.timeSlider.setEnabled(True)
         self.ui.timeLabel.setEnabled(True)
