@@ -10,6 +10,9 @@ import sys
 from ui.visualizer import Ui_MainWindow
 from ui.about import Ui_aboutWindow
 
+# Matplotlib class
+from plotter.matplotlib_viewer_canvas import MatplotlibViewerCanvas
+
 # for logging
 from time import localtime, strftime
 
@@ -35,15 +38,21 @@ class RobotViewerMainWindow(QtWidgets.QMainWindow):
 
         self.about = About()
 
-
         self.signal_provider = signal_provider
         self.signal_size = len(self.signal_provider)
         self.signal_provider.register_update_index(self.update_slider)
+
+        # instantiate MatplotlibViewerCanvas
+        animation_frame_rate = 25
+        self.mpl_canvas = MatplotlibViewerCanvas(self.ui.plotGroupBox, animation_frame_rate)
 
         # instantiate the Logger
         self.logger = Logger(self.ui.logLabel, self.ui.logScrollArea)
 
         self.slider_pressed = False
+
+        # add canvas to the main window
+        self.ui.plotBoxLayout.addWidget(self.mpl_canvas)
 
         # connect action
         self.ui.actionQuit.triggered.connect(self.quit)
