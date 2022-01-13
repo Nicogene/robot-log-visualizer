@@ -45,6 +45,7 @@ class RobotViewerMainWindow(QtWidgets.QMainWindow):
         # instantiate MatplotlibViewerCanvas
         animation_frame_rate = 25
         self.mpl_canvas = MatplotlibViewerCanvas(self.ui.plotGroupBox, animation_frame_rate)
+        self.signal_provider.assign_canvas(self.mpl_canvas)
 
         # instantiate the Logger
         self.logger = Logger(self.ui.logLabel, self.ui.logScrollArea)
